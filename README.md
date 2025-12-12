@@ -1,7 +1,15 @@
-# High-resolution spatial allocation of soybean genotypes using Enviromics
-Mauricio S. Araújo1, Gabriel M. Blasques2, Erica P. Leles3, Michelle F. Santos3, Peter Goldsmith3, Godfree Chigeza3, Brian W. Diers3, José B. Pinheiro1 
+# High-resolution Spatial Allocation of Soybean Genotypes Using Enviromics
 
+## Authors
+**Mauricio S. Araújo¹**, **Gabriel M. Blasques²**, **Erica P. Leles³**, **Michelle F. Santos³**,  
+**Peter Goldsmith³**, **Godfree Chigeza³**, **Brian W. Diers³**, **José B. Pinheiro¹**
 
-1Genetics Diversity and Breeding Laboratory, Department of Genetics, University of São Paulo, Piracicaba, São Paulo, Brazil
-2Agroenergy Laboratory, Department of Agronomy, Federal University of Viçosa, Viçosa, Minas Gerais, Brazil
-3USAID, Feed the Future Innovation Lab, University of Illinois Urbana-Champaign, Illinois, USA
+## Affiliations
+¹ Genetics Diversity and Breeding Laboratory, Department of Genetics,  
+  University of São Paulo (USP), Piracicaba, São Paulo, Brazil  
+
+² Agroenergy Laboratory, Department of Agronomy,  
+  Federal University of Viçosa (UFV), Viçosa, Minas Gerais, Brazil  
+
+³ USAID Feed the Future Soybean Innovation Lab,  
+  University of Illinois Urbana–Champaign (UIUC), Illinois, USA
