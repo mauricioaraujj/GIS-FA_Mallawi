@@ -1,1 +1,1 @@
-# GIS-FA_Mallawi
+# High-resolution spatial allocation of soybean genotypes using Enviromics
