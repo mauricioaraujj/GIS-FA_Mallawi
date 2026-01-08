@@ -60,5 +60,23 @@ Here, we identified soybean genotypes with high performance and stability under 
 ### Quick start
 ```bash
 # clone
-git clone <YOUR_REPO_URL>
+git clone <https://github.com/mauricioaraujj/GIS-FA_Mallawi>
 cd GIS-FA_Malawi
+
+## Citation
+
+If you use this code, data, or results in your research, please cite:
+
+> Araújo, M. S., Blasques, G. M., Leles, E. P., Santos, M. F., Goldsmith, P.,  
+> Chigeza, G., Diers, B. W., & Pinheiro, J. B.  
+> **High-resolution spatial allocation of soybean genotypes based on enviromics**.
+
+
+## Contact
+
+Have questions, want to collaborate, or found a bug?  
+Feel free to contact:
+
+- 📧 mauricioaraujj@usp.br  
+- 📧 jbaldin@usp.br
+
