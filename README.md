@@ -56,20 +56,11 @@ Spatial zones and genotype winners inferred from FA-based enviromics prediction.
 
 ---
 
-## Reproducibility
-
-### Requirements
-
-- **R ≥ 4.2**
-- Recommended: **`renv`** for dependency management
-
 ## Citation
 
 If you use this code, data, or results in your research, please cite:
 
-> Araújo, M. S., Blasques, G. M., Leles, E. P., Santos, M. F., Goldsmith, P.,  
-> Chigeza, G., Diers, B. W., & Pinheiro, J. B.  
-> **High-resolution spatial allocation of soybean genotypes based on enviromics**.
+> Araújo, M. S., Blasques, G. M., Leles, E. P., Santos, M. F., Goldsmith, P., Chigeza, G., Diers, B. W., & Pinheiro, J. B. **High-resolution spatial allocation of soybean genotypes based on enviromics**. in review, 2026.
 
 
 ## Contact
