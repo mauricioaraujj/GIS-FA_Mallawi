@@ -63,14 +63,6 @@ Spatial zones and genotype winners inferred from FA-based enviromics prediction.
 - **R ≥ 4.2**
 - Recommended: **`renv`** for dependency management
 
-### Quick start
-
-```bash
-# Clone the repository
-git clone https://github.com/mauricioaraujj/GIS-FA_Malawi.git
-cd GIS-FA_Malawi
-
-
 ## Citation
 
 If you use this code, data, or results in your research, please cite:
