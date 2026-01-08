@@ -71,7 +71,6 @@ git clone https://github.com/mauricioaraujj/GIS-FA_Malawi.git
 cd GIS-FA_Malawi
 
 
-
 ## Citation
 
 If you use this code, data, or results in your research, please cite:
@@ -81,11 +80,10 @@ If you use this code, data, or results in your research, please cite:
 > **High-resolution spatial allocation of soybean genotypes based on enviromics**.
 
 
-
 ## Contact
 
 Have questions, want to collaborate, or found a bug?  
 Feel free to contact:
 
-- 📧 mauricioaraujj@usp.br  
-- 📧 jbaldin@usp.br
+mauricioaraujj@usp.br  
+jbaldin@usp.br
