@@ -10,9 +10,7 @@ Spatially explicit cultivar recommendation in Malawi by integrating **Factor Ana
 
 ## Authors
 
-**Mauricio S. Araújo**<sup>1</sup>, **Gabriel M. Blasques**<sup>2</sup>, **Godfree Chigeza**<sup>3</sup>,  
-**Erica P. Leles**<sup>4</sup>, **Michelle F. Santos**<sup>4</sup>, **Peter Goldsmith**<sup>4</sup>,  
-**Brian W. Diers**<sup>4</sup>, **José B. Pinheiro**<sup>1</sup>
+**Mauricio S. Araújo**<sup>1</sup>, **Gabriel M. Blasques**<sup>2</sup>, **Godfree Chigeza**<sup>3</sup>, **Erica P. Leles**<sup>4</sup>, **Michelle F. Santos**<sup>4</sup>, **Peter Goldsmith**<sup>4</sup>, **Brian W. Diers**<sup>4</sup>, **José B. Pinheiro**<sup>1</sup>
 
 
 ### Affiliations
