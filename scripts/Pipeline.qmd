@@ -1,0 +1,701 @@
+---
+title: High-resolution spatial allocation of soybean genotypes based on enviromics
+lang: en
+date-format: long
+link-citations: true
+author:
+  - name: Mauricio S. Araújo
+    email: mauricioaraujj@usp.br
+    affiliations:
+      - name: Departamento de Genética, Escola Superior de Agricultura Luiz de Queiroz (ESALQ-USP)
+        city: Piracicaba
+        region: São Paulo
+        country: Brazil
+  - name: Gabriel M. Blasques
+    email: gabriel.blasques@ufv.br
+    affiliations:
+      - name: Departamento de Agronomia, Universidade Federal de Viçosa (UFV)
+        city: Viçosa
+        region: Minas Gerais
+        country: Brazil
+  - name: José B. Pinheiro
+    email: jbadin@usp.br
+    affiliations:
+      - name: Departamento de Genética, Escola Superior de Agricultura Luiz de Queiroz (ESALQ-USP)
+        city: Piracicaba
+        region: São Paulo
+        country: Brazil
+format: 
+  html:
+    toc: true
+    toc-depth: 3
+    toc-title: Sections
+    toc-location: left
+    number-sections: true
+    number-depth: 4
+    toc_float: true
+    theme: [zephyr, theme.scss]
+    embed-resources: true
+    anchor-sections: true
+    smooth-scroll: true
+    link-external-newwindow: false
+    code-fold: false
+    code-overflow: wrap
+    code-block-border-left: "#781c1e"
+    code-copy: hover
+    code-summary: "Show/Hide Code"
+    lang: en
+    fig-format: png
+    fig-responsive: true
+    fig-cap-location: bottom
+    tbl-cap-location: top
+    page-layout: article
+    csl: apa.csl
+    css: styles.css
+    title-block-banner: true
+    title-block-banner-color: 'white'
+    highlight-style: github
+editor_options: 
+  chunk_output_type: console
+---
+
+::: logo
+<img src="logo1.png" alt="Logo do laboratório" width="250"/>
+:::
+
+::: env-box
+# Pipeline
+:::
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+library(gghighlight)
+library(tidyverse)
+library(openxlsx)
+library(ggdendro)
+library(ggrepel)
+library(viridis)
+library(cowplot)
+library(forcats)
+library(asreml)
+library(purrr)
+library(pls)
+library(sf)
+library(ggspatial)
+library(ggnewscale)
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(viridisLite)
+library(grid)
+library(colorspace)
+source("https://raw.githubusercontent.com/saulo-chaves/May_b_useful/refs/heads/main/fa_outs.R")
+
+```
+
+## Data reading and likelihood ratio test (LRT)
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+data <- read.csv("data.csv", sep=";")
+
+
+data = transform(data,
+                 gen = factor(gen),
+                 rep = factor(rep),
+                 env = factor(env),
+                 yield = as.numeric(yield))
+
+
+num.env = nlevels(data$env)
+num.gen = nlevels(data$gen)
+name.env = levels(data$env)
+name.gen = levels(data$gen)
+
+
+significancia <- c()
+for (i in levels(data$env)) {
+  mod0 <- asreml(yield ~ rep,
+                 random = ~ gen,
+                 data = data, maxit = 100,
+                 na.action = na.method(x = "include", y = "include"),
+                 subset = env == i)
+  
+  mod1 <- asreml(yield ~ rep,
+                 data = data, maxit = 100,
+                 na.action = na.method(x = "include", y = "include"),
+                 subset = env == i)
+  
+  significancia[i] <- lrt(mod0, mod1)[3]
+}
+
+sign_df <- data.frame(env = names(significancia),
+                      pvalor = as.numeric(significancia))
+
+ambientes_excluir <- sign_df$env[sign_df$pvalor > 0.05]
+data <- droplevels(subset(data, !(env %in% ambientes_excluir)))
+
+
+num.env = nlevels(data$env)
+num.gen = nlevels(data$gen)
+name.env = levels(data$env)
+name.gen = levels(data$gen)
+
+rm(mod0, mod1, sign_df, significancia)
+```
+
+## Evaluating the optimal number of factors for the FA model
+
+```{r, eval=FALSE}
+## FA1
+mod1 <- asreml(
+  fixed    = yield ~ rep:env + env,
+  random   = ~ gen:fa(env, 1),
+  residual = ~ dsum(~ id(units) | env),
+  data     = data,
+  maxit    = 50,
+  na.action = na.method(x = "include", y = "include")
+)
+mod1 <- update(mod1)
+
+fa.res1 <- fa.outs(mod1, name.env = "env", name.gen = "gen")
+fa.res1$diagnostics
+
+
+## FA2
+mod2 <- asreml(
+  fixed    = yield ~ rep:env + env,
+  random   = ~ gen:fa(env, 2),
+  residual = ~ dsum(~ id(units) | env),
+  data     = data,
+  maxit    = 50,
+  na.action = na.method(x = "include", y = "include")
+)
+mod2 <- update(mod2)
+
+fa.res2 <- fa.outs(mod2, name.env = "env", name.gen = "gen")
+fa.res2$diagnostics
+
+
+## FA3
+mod3 <- asreml(
+  fixed    = yield ~ rep:env + env,
+  random   = ~ gen:fa(env, 3),
+  residual = ~ dsum(~ id(units) | env),
+  data     = data,
+  maxit    = 50,
+  na.action = na.method(x = "include", y = "include")
+)
+mod3 <- update(mod3)
+
+fa.res3 <- fa.outs(mod3, name.env = "env", name.gen = "gen")
+fa.res3$diagnostics
+
+
+## FA4
+mod4 <- asreml(
+  fixed    = yield ~ rep:env + env,
+  random   = ~ gen:fa(env, 4),
+  residual = ~ dsum(~ id(units) | env),
+  data     = data,
+  maxit    = 50,
+  na.action = na.method(x = "include", y = "include")
+)
+mod4 <- update(mod4)
+
+fa.res4 <- fa.outs(mod4, name.env = "env", name.gen = "gen")
+fa.res4$diagnostics
+
+
+## FA5
+mod5 <- asreml(
+  fixed    = yield ~ rep:env + env,
+  random   = ~ gen:fa(env, 5),
+  residual = ~ dsum(~ id(units) | env),
+  data     = data,
+  maxit    = 50,
+  na.action = na.method(x = "include", y = "include")
+)
+mod5 <- update(mod5)
+
+fa.res5 <- fa.outs(mod5, name.env = "env", name.gen = "gen")
+fa.res5$diagnostics
+
+
+## FA6
+mod6 <- asreml(
+  fixed    = yield ~ rep:env + env,
+  random   = ~ gen:fa(env, 6),
+  residual = ~ dsum(~ id(units) | env),
+  data     = data,
+  maxit    = 50,
+  na.action = na.method(x = "include", y = "include")
+)
+mod6 <- update(mod6)
+
+fa.res6 <- fa.outs(mod6, name.env = "env", name.gen = "gen")
+fa.res6$diagnostics
+
+
+## FA7
+mod7 <- asreml(
+  fixed    = yield ~ rep:env + env,
+  random   = ~ gen:fa(env, 7),
+  residual = ~ dsum(~ id(units) | env),
+  data     = data,
+  maxit    = 50,
+  na.action = na.method(x = "include", y = "include")
+)
+
+fa.res7 <- fa.outs(mod7, name.env = "env", name.gen = "gen")
+fa.res7$diagnostics
+```
+
+## Fitting the selected model
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+
+mod = asreml(fixed = yield ~ rep:env + env,
+              random = ~ gen:fa(env, 6),
+              residual = ~ dsum(~ id(units) | env),
+              data = data,
+              maxit = 50,
+              na.action = na.method(x = "include", y = "include"))
+mod = update(mod)
+
+
+asreml.options(maxit = 50, workspace = '1gb', pworkspace = '2gb')
+fa.res <- fa.outs(mod, name.env = "env", name.gen = "gen")
+all <- fa.res$blups
+
+
+fa.models = list(mod)
+fa.res = lapply(fa.models, function(x) fa.outs(x, name.env = "env",
+                                               name.gen = "gen"))
+diagnos = do.call(rbind,lapply(fa.res, function(x) x$diagnostics))
+rownames(diagnos) = c("mod"); diagnos[,'ASVR']
+
+
+fa = fa.res[[1]]
+rm(fa.models, fa.res); gc()
+
+```
+
+## Calculating the reliability and Factor Analytic Selection Tools metrics
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+rel = fa$blups |>
+  dplyr::reframe(rel = 1-(mean(std.error^2)/mean(diag(fa$Gvcov))), .by = gen)
+FAST = data.frame(
+  env = fa$blups$env,
+  gen = fa$blups$gen,
+  RMSD = (fa$blups$marginal - (kronecker(fa$rot.loads[,1], diag(num.gen)) %*%
+                                  fa$rot.scores[,1]))^2
+) |> dplyr::reframe(RMSD = sqrt(mean(RMSD)), .by = gen) |>
+  dplyr::mutate(
+    OP = mean(fa$rot.loads[,1]) * fa$rot.scores[,1],
+    index= 2*((OP-mean(OP))/sqrt(var(OP))) - ((RMSD-mean(RMSD))/sqrt(var(RMSD))),
+    rel = rel$rel)
+
+
+
+
+FAST |> ggplot(aes(x = RMSD, y = OP)) +
+  geom_point(aes(color = rel)) +
+  geom_vline(xintercept = 0, linetype = 'dashed') +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  gghighlight(gen %in% FAST[order(FAST$index, decreasing = T),'gen'][1:16]) +
+  geom_label_repel(aes(label = gen), size = 4, box.padding = .5,
+                   max.overlaps = 30) +
+  labs(colour = "Reliability") +
+  scale_colour_viridis_c() +
+  labs(x = "Root mean square deviation", y = "Overall performance")
+
+```
+
+## Leave-one-environment-out Cross-validation
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+
+matcovamb <- read.xlsx("featuresexperiments1.xlsx", rowNames = TRUE)
+
+Lambda  <- as.matrix(fa$rot.loads)
+CovAmb0 <- as.matrix(matcovamb)
+
+envs <- intersect(rownames(Lambda), rownames(CovAmb0))
+Lambda  <- Lambda[envs, , drop = FALSE]
+CovAmb0 <- CovAmb0[envs, , drop = FALSE]
+
+ok <- apply(CovAmb0, 2, 
+            function(x) is.finite(sd(x, na.rm = TRUE)) 
+            && sd(x, na.rm = TRUE) > 0)
+CovAmb <- scale(CovAmb0[, ok, drop = FALSE])
+
+df <- data.frame(lambda = I(Lambda), CovAmb = I(CovAmb))
+
+nmax <- pls::plsr(lambda ~ CovAmb, validation = "CV", data = df)$ncomp
+
+cv.results <- do.call(rbind, lapply(1:nmax, function(j){
+  acc_l <- acc_e <- numeric(0)
+  for (i in rownames(CovAmb)) {
+    tr <- df[rownames(df) != i, , drop = FALSE]
+    te <- df[rownames(df) == i, , drop = FALSE]
+    m  <- pls::plsr(lambda ~ CovAmb, validation = "CV", data = tr, ncomp = j)
+    B  <- coef(m, intercept = TRUE)[-1, , 1]
+    b0 <- coef(m, intercept = TRUE)[1,  , 1]
+    pred_l <- te$CovAmb %*% B + matrix(b0, nrow = 1)
+    acc_l <- c(acc_l, suppressWarnings(cor(as.numeric(pred_l),
+                                           as.numeric(te$lambda))))
+    pred_e <- tcrossprod(as.numeric(pred_l), fa$rot.scores)
+    obs_e  <- fa$blups[fa$blups$env == i, "marginal"]
+    acc_e <- c(acc_e, suppressWarnings(cor(as.numeric(pred_e),
+                                           obs_e, method = "spearman")))
+  }
+  data.frame(ncomp = j, lambda = mean(acc_l, na.rm = TRUE),
+             eblup = mean(acc_e, na.rm = TRUE))
+}))
+
+```
+
+```{r, echo=FALSE}
+cv.results
+```
+
+## Selection coincidence plot
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+
+data.pls.lamb = df
+
+pred_blup = list()
+for (i in name.env) {
+  train = data.pls.lamb[rownames(data.pls.lamb) != i,]
+  test = data.pls.lamb[rownames(data.pls.lamb) == i,]
+  
+  cvloo = plsr(lambda ~ CovAmb, validation = 'CV', data = train, 
+               ncomp = 4)
+  pred_blup[[i]] = data.frame(
+    pred = t(tcrossprod(
+      test$CovAmb %*% coef(cvloo, intercept = T)[-1,,1] + 
+        coef(cvloo, intercept = T)[1,,1],
+      fa$rot.scores
+    )),
+    blup = fa$blups[fa$blups$env == i,'marginal'],
+    env = i,
+    gen = fa$blups[fa$blups$env == i,'gen']
+  )
+  colnames(pred_blup[[i]]) = c('pred', 'blup', 'env', 'gen')
+}
+
+
+pred.plot = do.call(rbind, pred_blup)
+
+
+coinc = pred.plot |> 
+  ggplot(aes(x = pred, y = blup)) + 
+  geom_rug() + 
+  geom_hline(
+    data = pred.plot |> 
+      reframe(qq = quantile(blup, probs = c(.2, .5, .75 ,.90))),
+    aes(yintercept = qq, color = c('20%', '50%', '75%', '90%')), 
+    linetype = 'dashed',
+    linewidth = 1.2
+  ) + 
+  geom_vline(
+    data = pred.plot |> 
+      reframe(qq = quantile(pred, probs = c(.2, .5, .75 ,.90))),
+    aes(xintercept = qq, color = c('20%', '50%', '75%', '90%')),
+    linetype = 'dashed', 
+    linewidth = 1.2
+  ) + 
+  scale_colour_manual('Quantiles', values = c('#e41a1c', '#377eb8',
+                                              '#984ea3', '#4daf4a')) + 
+  new_scale_colour() +
+  geom_point(aes(colour = gen), size = 1.7, show.legend = F) + 
+  scale_colour_viridis_d('Coincident', option = 'inferno')  +
+  gghighlight(blup >= quantile(pred.plot$blup, .9)
+              & pred >= quantile(pred.plot$pred, .9),
+              unhighlighted_params = list(colour = 'darkgrey', size = 1), 
+              use_direct_label = F) + 
+  labs(x = 'Predicted', y = 'Observed', 
+       caption = paste0('Coincidence = ', 
+                        round(sum(pred.plot$blup >=
+                                    quantile(pred.plot$blup, .9) & 
+                                    pred.plot$pred >= 
+                                    quantile(pred.plot$pred, .9)) / 
+                                sum(pred.plot$pred >= 
+                                    quantile(pred.plot$pred, .9)) * 100, 2),'%'))
+
+```
+
+```{r, echo=FALSE}
+plot(coinc)
+```
+
+## Partial least squares predictions
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+
+Experi <- read.xlsx("featuresexperiments1.xlsx", rowNames = TRUE)
+a <- unique(data$env)
+Experi <- droplevels(subset(Experi, row.names(Experi) %in% a))
+
+data.pls.lamb = data.frame(lambda = I(fa$rot.loads),
+                           CovAmb = I(scale(as.matrix(Experi))))
+
+pls2.lamb = pls::plsr(lambda ~ CovAmb, validation = 'CV', data = data.pls.lamb,
+                      ncomp = 4)
+explvar(pls2.lamb)
+
+
+coef_pls = coef(pls2.lamb, intercept = T)[,,1]
+
+
+matcovamb_pred<- read.xlsx("featuresTPE_c.xlsx", rowNames = F)
+matcovamb_pred <- matcovamb_pred[complete.cases(matcovamb_pred), ]
+
+
+matcovamb_pred1 <- matcovamb_pred[, colnames(Experi)]
+
+
+pred_lambda = scale(matcovamb_pred1) %*% coef_pls[-1, ]
+pred_lambda = cbind(
+  fa1 = pred_lambda[,'fa1'] + coef_pls["(Intercept)", "fa1"],
+  fa2 = pred_lambda[,'fa2'] + coef_pls["(Intercept)", "fa2"],
+  fa3 = pred_lambda[,'fa3'] + coef_pls["(Intercept)", "fa3"],
+  fa4 = pred_lambda[,'fa4'] + coef_pls["(Intercept)", "fa4"],
+  fa5 = pred_lambda[,'fa5'] + coef_pls["(Intercept)", "fa5"],
+  fa6 = pred_lambda[,'fa6'] + coef_pls["(Intercept)", "fa6"]
+)
+
+EBLUPs_pred = as.matrix(pred_lambda[,'fa1']) %*% fa$rot.scores[,'fa1'] +
+  as.matrix(pred_lambda[,'fa2']) %*% fa$rot.scores[,'fa2'] +
+  as.matrix(pred_lambda[,'fa3']) %*% fa$rot.scores[,'fa3'] +
+  as.matrix(pred_lambda[,'fa4']) %*% fa$rot.scores[,'fa4'] +
+  as.matrix(pred_lambda[,'fa5']) %*% fa$rot.scores[,'fa5'] +
+  as.matrix(pred_lambda[,'fa6']) %*% fa$rot.scores[,'fa6'] +
+  mean(data$yield, na.rm = T)
+```
+
+## Which-won-where thematic map
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+
+sf::sf_use_s2(FALSE)
+
+
+colnames(EBLUPs_pred) <- name.gen
+idx <- max.col(EBLUPs_pred, ties.method = "first")
+
+map_winners_plot <- matcovamb_pred %>%
+  dplyr::transmute(
+    LON = as.numeric(LON),
+    LAT = as.numeric(LAT),
+    winner_gen = factor(colnames(EBLUPs_pred)[idx]),
+    winner_val = EBLUPs_pred[cbind(dplyr::row_number(), idx)]
+  ) %>%
+  dplyr::filter(is.finite(LON), is.finite(LAT)) %>%
+  dplyr::group_by(LON, LAT) %>%
+  dplyr::slice_max(winner_val, n = 1, with_ties = FALSE) %>%
+  dplyr::ungroup()
+
+
+min_pts <- 5000
+
+winner_counts <- map_winners_plot %>%
+  dplyr::count(winner_gen, name = "n_pts", sort = TRUE)
+
+keep_levels <- winner_counts %>%
+  dplyr::filter(n_pts >= min_pts) %>%
+  dplyr::pull(winner_gen) %>%
+  as.character()
+
+map_winners_plot <- map_winners_plot %>%
+  dplyr::filter(winner_gen %in% keep_levels) %>%
+  dplyr::mutate(winner_gen = factor(winner_gen, levels = keep_levels))
+
+
+pts_sf <- sf::st_as_sf(map_winners_plot,
+                       coords = c("LON","LAT"), crs = 4326, remove = FALSE)
+
+malawi <- rnaturalearth::ne_countries(country = "Malawi",
+                                      scale = "medium", returnclass = "sf")
+bb_mw  <- sf::st_bbox(malawi); buf <- 0.5
+
+pal <- colorspace::qualitative_hcl(
+  n = nlevels(map_winners_plot$winner_gen),
+  palette = "Dark 3"
+)
+names(pal) <- levels(map_winners_plot$winner_gen)
+
+
+ggplot() +
+  geom_sf(data = malawi, fill = "lightblue", color = NA) +
+  geom_sf(data = pts_sf, aes(color = winner_gen),
+          shape = 16, size = 0.001, alpha = 0.95) +
+  geom_sf(data = malawi, fill = NA, color = "red", linewidth = 0.9) +
+  coord_sf(
+    xlim = c(bb_mw["xmin"] - buf, bb_mw["xmax"] + buf),
+    ylim = c(bb_mw["ymin"] - buf, bb_mw["ymax"] + buf),
+    expand = FALSE
+  ) +
+  scale_color_manual(values = pal) +
+  guides(color = guide_legend(override.aes = list(
+    shape = 15,
+    size = 5, alpha = 1), ncol = 1)) +
+  labs(x = "Longitude", y = "Latitude", color = "Winner") +
+  theme_minimal(base_family = "Helvetica") +
+  theme(
+    legend.position = "right",
+    axis.title = element_text(size = 12),
+    legend.title = element_text(size = 11),
+    legend.text  = element_text(size = 10),
+    panel.border = element_rect(colour = "black", fill = NA, linewidth = 0.8))
+
+```
+
+## Broad-adaptation thematic maps
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+
+colnames(EBLUPs_pred) <- name.gen
+genos <- c("SCSENTINEL","SC_EXPT1","TGx20029FM","TGx20145GM","TGx201424FM",
+           "TGx203392GZ","TGx201421FM","TGx200124FM")
+
+malawi <- ne_countries(country = "Malawi", scale = "medium", returnclass = "sf")
+bb     <- st_bbox(malawi)
+buf    <- 0.5
+
+all_blups <- as.numeric(as.matrix(EBLUPs_pred[, genos, drop = FALSE]))
+all_blups <- all_blups[is.finite(all_blups)]
+
+breaks <- seq(min(all_blups), max(all_blups), length.out = 7)
+labels <- sprintf("%s – %s",
+                  format(round(breaks[-7], 0), big.mark=".", scientific=FALSE),
+                  format(round(breaks[-1], 0), big.mark=".", scientific=FALSE))
+cols   <- viridis(length(labels), option = "turbo")
+pal    <- setNames(cols, labels)
+
+
+make_map <- function(g) {
+  df <- matcovamb_pred %>%
+    transmute(LON = as.numeric(LON),
+              LAT = as.numeric(LAT),
+              class = cut(as.numeric(EBLUPs_pred[, g]),
+                          breaks, include.lowest = TRUE,
+                          right = FALSE, labels = labels)) %>%
+    filter(is.finite(LON), is.finite(LAT), !is.na(class))
+
+  ggplot() +
+    geom_sf(data = malawi, fill = "lightblue", color = NA) +
+    geom_point(data = df, aes(LON, LAT, color = class),
+               size = 0.20, alpha = 0.95) +
+    geom_sf(data = malawi, fill = NA, color = "black", linewidth = 0.8) +
+    scale_color_manual(values = pal) +
+    coord_sf(xlim = c(bb["xmin"]-buf, bb["xmax"]+buf),
+             ylim = c(bb["ymin"]-buf, bb["ymax"]+buf), expand = FALSE) +
+    labs(title = g) +
+    theme_minimal(base_family = "Helvetica") +
+    theme(plot.title = element_text(size = 11, face = "bold"),
+          panel.border = element_rect(colour="black", fill=NA, linewidth=0.6),
+          axis.title = element_blank(),
+          legend.position = "none",
+          plot.margin = margin(1, 0, 1, 0))
+}
+
+
+panel <- plot_grid(plotlist = lapply(genos, make_map),
+                   ncol = 4, align = "hv", greedy = TRUE)
+
+
+legend <- get_legend(
+  ggplot(data.frame(class = factor(labels, levels = labels)),
+         aes(class, 1, fill = class)) +
+    geom_tile() +
+    scale_fill_manual(values = pal, name = "\u0177 (kg ha\u207B\u00B9)") +
+    guides(fill = guide_legend(direction="horizontal", title.position="left",
+                               keywidth=unit(1.25,"cm"),
+                               keyheight=unit(0.65,"cm"),
+                               nrow=1)) +
+    theme_void(base_family = "Helvetica") +
+    theme(legend.position="bottom",
+          legend.title = element_text(size=11),
+          legend.text  = element_text(size=10))
+)
+
+
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+plot_grid(panel, legend, ncol = 1, rel_heights = c(1, 0.11))
+```
+
+## Pairwise comparison thematic map
+
+```{r, results="hide", warning=FALSE, message=FALSE}
+sf::sf_use_s2(FALSE)
+
+colnames(EBLUPs_pred) <- name.gen
+malawi <- ne_countries(country = "Malawi", scale = "medium", returnclass = "sf")
+bb  <- st_bbox(malawi); buf <- 0.5
+
+top3 <- c("TGx201424FM","TGx203392GZ","TGx201421FM")
+bot3 <- c("TGx20029FM","TGx20145GM","TGx200124FM")
+
+pairs <- list(c(top3[1],top3[2]), c(top3[1],top3[3]), c(top3[2],top3[3]),
+              c(bot3[1],bot3[2]), c(bot3[1],bot3[3]), c(bot3[2],bot3[3]))
+titles <- vapply(pairs, \(p) paste(p[1], "vs", p[2]), character(1))
+
+pal_winner <- c("TGx201424FM"="#00ac79","TGx203392GZ"="#0018b7",
+                "TGx201421FM"="#009ade",
+                "TGx20029FM" ="#9f9400","TGx20145GM" ="#50a315",
+                "TGx200124FM"="#a87be4")
+
+make_pair_map <- function(g1, g2, ttl) {
+  df <- matcovamb_pred %>%
+    transmute(LON = as.numeric(LON),
+              LAT = as.numeric(LAT),
+              winner = ifelse(as.numeric(EBLUPs_pred[, g1])
+                              >= as.numeric(EBLUPs_pred[, g2]), g1, g2)) %>%
+    filter(is.finite(LON), is.finite(LAT), !is.na(winner))
+
+  ggplot() +
+    geom_sf(data = malawi, fill = "lightblue", color = NA) +
+    geom_point(data = df, aes(LON, LAT, color = winner), size = 0.20,
+               alpha = 0.95) +
+    geom_sf(data = malawi, fill = NA, color = "black", linewidth = 0.7) +
+    scale_color_manual(values = pal_winner, drop = FALSE) +
+    coord_sf(xlim = c(bb["xmin"]-buf, bb["xmax"]+buf),
+             ylim = c(bb["ymin"]-buf, bb["ymax"]+buf), expand = FALSE) +
+    labs(title = ttl) +
+    theme_minimal(base_family = "Helvetica") +
+    theme(plot.title = element_text(size = 10, hjust = 0.5, face = "bold"),
+          panel.border = element_rect(colour="black", fill=NA, linewidth=0.6),
+          axis.title = element_blank(),
+          legend.position = "none",
+          plot.margin = margin(4, 0, 4, 0))
+}
+
+
+maps  <- Map(\(p, t) make_pair_map(p[1], p[2], t), pairs, titles)
+panel <- plot_grid(plotlist = maps, ncol = 3, align = "hv", greedy = TRUE)
+
+
+needed <- unique(unlist(pairs))
+legend <- get_legend(
+  ggplot(data.frame(geno = factor(needed, levels = needed)),
+         aes(geno, 1, fill = geno)) +
+    geom_tile() +
+    scale_fill_manual(values = pal_winner, name = "Winner") +
+    guides(fill = guide_legend(direction = "horizontal",
+                               title.position = "left",
+                               keywidth = unit(1.1,"cm"),
+                               keyheight = unit(0.55,"cm"),
+                               nrow = 1)) +
+    theme_void(base_family = "Helvetica") +
+    theme(legend.position = "bottom",
+          legend.title = element_text(size = 11),
+          legend.text  = element_text(size = 10))
+)
+
+
+```
+
+![](pairwise.png)
