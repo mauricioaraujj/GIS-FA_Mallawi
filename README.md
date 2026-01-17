@@ -69,4 +69,3 @@ Have questions, want to collaborate, or found a bug?
 Feel free to contact:
 
 mauricioaraujj@usp.br  
-jbaldin@usp.br
