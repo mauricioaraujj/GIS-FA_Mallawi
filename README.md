@@ -1,4 +1,4 @@
-# High-resolution spatial allocation of soybean genotypes using envirotyping
+# Spatial allocation of soybean genotypes in multi-environment trials based on envirotyping
 
 [![R](https://img.shields.io/badge/R-%3E%3D%204.2-blue)](https://www.r-project.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
